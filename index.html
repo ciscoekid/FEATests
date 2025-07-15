@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domestic Helper Catalogue</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* A very light blue-gray, softer than original f0f2f5 */
+        }
+        /* Custom styles for better aesthetics, inspired by fairagency.org */
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease-in-out;
+            border-radius: 0.75rem; /* Slightly more rounded corners for cards */
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .filter-input {
+            border: 1px solid #d1d5db;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #ffffff; /* Ensure input background is white */
+            color: #374151; /* Darker text for inputs */
+        }
+        .filter-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+            color: #1f2937; /* Darker gray for labels */
+        }
+        /* Custom teal shades to match the inspiration website */
+        .text-fair-teal {
+            color: #008080; /* A strong teal color */
+        }
+        .bg-fair-teal-light {
+            background-color: #e0f2f2; /* A very light teal for backgrounds */
+        }
+        .bg-fair-teal-dark {
+            background-color: #008080; /* Strong teal for accents */
+            color: white; /* White text on dark teal */
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal-overlay.open .modal-content {
+            transform: translateY(0);
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto bg-white rounded-lg shadow-xl p-6 md:p-10">
+        <h1 class="text-3xl md:text-4xl font-bold text-center text-fair-teal mb-8">Domestic Helper Catalogue</h1>
+
+        <!-- Filter Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 p-6 bg-fair-teal-light rounded-lg">
+            <div>
+                <label for="nationality-filter" class="filter-label">Nationality</label>
+                <select id="nationality-filter" class="filter-input">
+                    <option value="">All</option>
+                    <option value="Filipino">Filipino</option>
+                    <option value="Indonesian">Indonesian</option>
+                    <option value="Myanmar">Myanmar</option>
+                    <option value="Sri Lankan">Sri Lankan</option>
+                </select>
+            </div>
+            <div>
+                <label for="age-filter" class="filter-label">Age Range</label>
+                <select id="age-filter" class="filter-input">
+                    <option value="">All</option>
+                    <option value="20-25">20-25</option>
+                    <option value="26-30">26-30</option>
+                    <option value="31-35">31-35</option>
+                    <option value="36-40">36-40</option>
+                    <option value="41+">41+</option>
+                </select>
+            </div>
+            <div>
+                <label for="skills-filter" class="filter-label">Skills</label>
+                <select id="skills-filter" class="filter-input">
+                    <option value="">All</option>
+                    <option value="Child Care">Child Care</option>
+                    <option value="Elderly Care">Elderly Care</option>
+                    <option value="Cooking">Cooking</option>
+                    <option value="Housekeeping">Housekeeping</option>
+                    <option value="Pet Care">Pet Care</option>
+                    <option value="Driving">Driving</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Car Washing">Car Washing</option>
+                    <option value="Special Needs">Special Needs</option>
+                    <option value="Halal Cooking">Halal Cooking</option>
+                </select>
+            </div>
+            <div>
+                <label for="search-input" class="filter-label">Search by Name</label>
+                <input type="text" id="search-input" placeholder="Search by name..." class="filter-input">
+            </div>
+        </div>
+
+        <!-- Helper Cards Container -->
+        <div id="helper-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Helper cards will be injected here by JavaScript -->
+        </div>
+
+        <!-- No Results Message -->
+        <div id="no-results" class="text-center text-gray-600 text-lg mt-8 hidden">
+            No helpers found matching your criteria.
+        </div>
+    </div>
+
+    <!-- Full Profile Modal -->
+    <div id="full-profile-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close-button" id="close-modal-button">&times;</button>
+            <div id="modal-profile-details" class="text-center">
+                <!-- Full profile details will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data for domestic helpers
+        const domesticHelpers = [
+            {
+                id: 'dh011',
+                name: 'Lina Garcia',
+                nationality: 'Filipino',
+                age: 34,
+                maritalStatus: 'Married',
+                children: 2,
+                educationLevel: 'College Graduate',
+                yearsExperienceOverall: 8,
+                yearsExperienceHK: 6,
+                skills: ['Child Care', 'Cooking (Western, Asian)', 'Housekeeping', 'Marketing', 'Car Washing'],
+                availability: '1 month notice',
+                expectedSalary: 'HK$4,800',
+                visaStatus: 'Finished Contract',
+                bio: 'Reliable and experienced helper with a strong background in child care and household management. Excellent cook and very organized.',
+                imageUrl: 'https://placehold.co/400x400/FFDDC1/333333?text=Lina'
+            },
+            {
+                id: 'dh012',
+                name: 'Indah Sari',
+                nationality: 'Indonesian',
+                age: 29,
+                maritalStatus: 'Single',
+                children: 0,
+                educationLevel: 'High School',
+                yearsExperienceOverall: 5,
+                yearsExperienceHK: 3,
+                skills: ['Elderly Care', 'Housekeeping', 'Pet Care'],
+                availability: 'Immediate',
+                expectedSalary: 'HK$4,730',
+                visaStatus: 'Break Contract',
+                bio: 'Patient and compassionate, dedicated to providing excellent care for the elderly. Good with pets and maintains a clean home.',
+                imageUrl: 'https://placehold.co/400x400/C1FFD1/333333?text=Indah'
+            },
+            {
+                id: 'dh013',
+                name: 'Khin Myo',
+                nationality: 'Myanmar',
+                age: 27,
+                maritalStatus: 'Married',
+                children: 1,
+                educationLevel: 'High School',
+                yearsExperienceOverall: 4,
+                yearsExperienceHK: 0,
+                skills: ['Child Care', 'Housekeeping', 'Basic Cooking'],
+                availability: 'New Visa',
+                expectedSalary: 'HK$4,730',
+                visaStatus: 'New',
+                bio: 'Energetic and eager to learn, seeking first overseas employment in Hong Kong. Good with infants and quick to adapt.',
+                imageUrl: 'https://placehold.co/400x400/D1C1FF/333333?text=Khin'
+            },
+            {
+                id: 'dh014',
+                name: 'Nisha Perera',
+                nationality: 'Sri Lankan',
+                age: 38,
+                maritalStatus: 'Divorced',
+                children: 3,
+                educationLevel: 'High School',
+                yearsExperienceOverall: 12,
+                yearsExperienceHK: 8,
+                skills: ['Cooking', 'Housekeeping', 'Driving'],
+                availability: 'Finished Contract',
+                expectedSalary: 'HK$5,000',
+                visaStatus: 'Finished Contract',
+                bio: 'Highly experienced and independent helper, capable of managing all household duties and cooking diverse cuisines. Holds a valid HK driving license.',
+                imageUrl: 'https://placehold.co/400x400/FFC1D1/333333?text=Nisha'
+            },
+            {
+                id: 'dh015',
+                name: 'Joy Mendoza',
+                nationality: 'Filipino',
+                age: 31,
+                maritalStatus: 'Single',
+                children: 0,
+                educationLevel: 'Vocational',
+                yearsExperienceOverall: 7,
+                yearsExperienceHK: 4,
+                skills: ['Child Care', 'Cooking', 'Housekeeping', 'Special Needs'],
+                availability: '2 weeks notice',
+                expectedSalary: 'HK$4,800',
+                visaStatus: 'Finished Contract',
+                bio: 'Patient and skilled in caring for children, including those with special needs. Adaptable and a good team player.',
+                imageUrl: 'https://placehold.co/400x400/C1FFDD/333333?text=Joy'
+            },
+            {
+                id: 'dh016',
+                name: 'Fatima Azzahra',
+                nationality: 'Indonesian',
+                age: 26,
+                maritalStatus: 'Married',
+                children: 1,
+                educationLevel: 'High School',
+                yearsExperienceOverall: 3,
+                yearsExperienceHK: 1,
+                skills: ['Housekeeping', 'Basic Cooking', 'Pet Care'],
+                availability: 'Immediate',
+                expectedSalary: 'HK$4,730',
+                visaStatus: 'Break Contract',
+                bio: 'Hardworking and responsible, looking for a new employer. Experienced in general housekeeping and caring for cats.',
+                imageUrl: 'https://placehold.co/400x400/FFC1F1/333333?text=Fatima'
+            },
+            {
+                id: 'dh017',
+                name: 'Aung Myo',
+                nationality: 'Myanmar',
+                age: 30,
+                maritalStatus: 'Single',
+                children: 0,
+                educationLevel: 'College',
+                yearsExperienceOverall: 6,
+                yearsExperienceHK: 2,
+                skills: ['Elderly Care', 'Cooking', 'Housekeeping'],
+                availability: '1 month notice',
+                expectedSalary: 'HK$4,730',
+                visaStatus: 'Finished Contract',
+                bio: 'Dedicated and respectful, with experience in caring for elderly individuals. Good at preparing a variety of meals.',
+                imageUrl: 'https://placehold.co/400x400/C1D1FF/333333?text=Aung'
+            },
+            {
+                id: 'dh018',
+                name: 'Ranmini Silva',
+                nationality: 'Sri Lankan',
+                age: 25,
+                maritalStatus: 'Single',
+                children: 0,
+                educationLevel: 'High School',
+                yearsExperienceOverall: 2,
+                yearsExperienceHK: 0,
+                skills: ['Child Care', 'Housekeeping'],
+                availability: 'New Visa',
+                expectedSalary: 'HK$4,730',
+                visaStatus: 'New',
+                bio: 'Enthusiastic and gentle, eager to start her career as a domestic helper in Hong Kong. Good with young children.',
+                imageUrl: 'https://placehold.co/400x400/D1FFC1/333333?text=Ranmini'
+            },
+            {
+                id: 'dh019',
+                name: 'Michelle Chua',
+                nationality: 'Filipino',
+                age: 40,
+                maritalStatus: 'Married',
+                children: 2,
+                educationLevel: 'College Graduate',
+                yearsExperienceOverall: 15,
+                yearsExperienceHK: 10,
+                skills: ['Child Care', 'Elderly Care', 'Cooking', 'Housekeeping', 'Driving'],
+                availability: 'Finished Contract',
+                expectedSalary: 'HK$5,200',
+                visaStatus: 'Finished Contract',
+                bio: 'Highly experienced and versatile, capable of managing all aspects of a household. Excellent with both children and seniors.',
+                imageUrl: 'https://placehold.co/400x400/FFF1C1/333333?text=Michelle'
+            },
+            {
+                id: 'dh020',
+                name: 'Nurul Huda',
+                nationality: 'Indonesian',
+                age: 33,
+                maritalStatus: 'Married',
+                children: 2,
+                educationLevel: 'High School',
+                yearsExperienceOverall: 9,
+                yearsExperienceHK: 5,
+                skills: ['Cooking', 'Housekeeping', 'Marketing', 'Halal Cooking'],
+                availability: '1 month notice',
+                expectedSalary: 'HK$4,730',
+                visaStatus: 'Finished Contract',
+                bio: 'Specializes in preparing Halal meals and maintaining a clean, organized home. Responsible and trustworthy.',
+                imageUrl: 'https://placehold.co/400x400/C1FFDD/333333?text=Nurul'
+            }
+        ];
+
+        const helperListDiv = document.getElementById('helper-list');
+        const nationalityFilter = document.getElementById('nationality-filter');
+        const ageFilter = document.getElementById('age-filter');
+        const skillsFilter = document.getElementById('skills-filter');
+        const searchInput = document.getElementById('search-input');
+        const noResultsMessage = document.getElementById('no-results');
+
+        // Modal elements
+        const fullProfileModal = document.getElementById('full-profile-modal');
+        const closeModalButton = document.getElementById('close-modal-button');
+        const modalProfileDetails = document.getElementById('modal-profile-details');
+
+        // Function to render helper cards (preview)
+        function renderHelpers(helpersToRender) {
+            helperListDiv.innerHTML = ''; // Clear existing cards
+            if (helpersToRender.length === 0) {
+                noResultsMessage.classList.remove('hidden');
+                return;
+            } else {
+                noResultsMessage.classList.add('hidden');
+            }
+
+            helpersToRender.forEach(helper => {
+                const card = document.createElement('div');
+                card.className = 'card bg-white rounded-xl p-6 flex flex-col items-center text-center';
+                card.innerHTML = `
+                    <img src="${helper.imageUrl}" alt="${helper.name}" class="w-32 h-32 rounded-full object-cover mb-4 border-4 border-fair-teal">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2">${helper.name}</h2>
+                    <p class="text-gray-600 mb-1"><strong class="text-gray-700">Nationality:</strong> ${helper.nationality}</p>
+                    <p class="text-gray-600 mb-1"><strong class="text-gray-700">Age:</strong> ${helper.age}</p>
+                    <p class="text-gray-600 mb-1"><strong class="text-gray-700">Experience (Overall):</strong> ${helper.yearsExperienceOverall} years</p>
+                    <div class="mt-2 mb-4">
+                        <strong class="text-gray-700">Skills:</strong>
+                        <div class="flex flex-wrap justify-center mt-1">
+                            ${helper.skills.map(skill => `<span class="bg-fair-teal-light text-fair-teal text-xs font-medium px-2.5 py-0.5 rounded-full mr-2 mb-2">${skill}</span>`).join('')}
+                        </div>
+                    </div>
+                    <p class="text-gray-700 text-sm italic mb-4">${helper.bio}</p>
+                    <button class="view-profile-btn bg-fair-teal-dark hover:bg-fair-teal text-white font-bold py-2 px-4 rounded-lg transition duration-300" data-id="${helper.id}">
+                        View Full Profile
+                    </button>
+                `;
+                helperListDiv.appendChild(card);
+            });
+
+            // Add event listeners to the new buttons
+            document.querySelectorAll('.view-profile-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const helperId = event.target.dataset.id;
+                    const selectedHelper = domesticHelpers.find(h => h.id === helperId);
+                    if (selectedHelper) {
+                        displayFullProfile(selectedHelper);
+                    }
+                });
+            });
+        }
+
+        // Function to display the full profile in a modal
+        function displayFullProfile(helper) {
+            modalProfileDetails.innerHTML = `
+                <img src="${helper.imageUrl}" alt="${helper.name}" class="w-40 h-40 rounded-full object-cover mx-auto mb-6 border-4 border-fair-teal">
+                <h2 class="text-2xl font-bold text-gray-800 mb-3">${helper.name}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4 text-left mb-6">
+                    <p class="text-gray-700"><strong class="text-gray-800">Nationality:</strong> ${helper.nationality}</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Age:</strong> ${helper.age}</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Marital Status:</strong> ${helper.maritalStatus}</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Children:</strong> ${helper.children}</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Education Level:</strong> ${helper.educationLevel}</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Experience (Overall):</strong> ${helper.yearsExperienceOverall} years</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Experience (HK):</strong> ${helper.yearsExperienceHK} years</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Availability:</strong> ${helper.availability}</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Expected Salary:</strong> ${helper.expectedSalary}</p>
+                    <p class="text-gray-700"><strong class="text-gray-800">Visa Status:</strong> ${helper.visaStatus}</p>
+                </div>
+                <div class="mb-6">
+                    <strong class="text-gray-800 block mb-2">Skills:</strong>
+                    <div class="flex flex-wrap justify-center">
+                        ${helper.skills.map(skill => `<span class="bg-fair-teal-light text-fair-teal text-sm font-medium px-3 py-1 rounded-full mr-2 mb-2">${skill}</span>`).join('')}
+                    </div>
+                </div>
+                <p class="text-gray-700 text-base italic leading-relaxed">${helper.bio}</p>
+            `;
+            fullProfileModal.classList.remove('hidden');
+            // Trigger reflow to ensure transition plays
+            void fullProfileModal.offsetWidth;
+            fullProfileModal.classList.add('open');
+        }
+
+        // Function to hide the modal
+        function hideFullProfile() {
+            fullProfileModal.classList.remove('open');
+            fullProfileModal.addEventListener('transitionend', () => {
+                if (!fullProfileModal.classList.contains('open')) {
+                    fullProfileModal.classList.add('hidden');
+                }
+            }, { once: true });
+        }
+
+        // Add event listeners to filters
+        nationalityFilter.addEventListener('change', filterHelpers);
+        ageFilter.addEventListener('change', filterHelpers);
+        skillsFilter.addEventListener('change', filterHelpers);
+        searchInput.addEventListener('input', filterHelpers); // Use 'input' for real-time search
+
+        // Add event listener for closing the modal
+        closeModalButton.addEventListener('click', hideFullProfile);
+        fullProfileModal.addEventListener('click', (event) => {
+            if (event.target === fullProfileModal) {
+                hideFullProfile();
+            }
+        });
+
+        // Function to filter helpers based on current selections
+        function filterHelpers() {
+            const selectedNationality = nationalityFilter.value;
+            const selectedAgeRange = ageFilter.value;
+            const selectedSkill = skillsFilter.value;
+            const searchTerm = searchInput.value.toLowerCase();
+
+            const filtered = domesticHelpers.filter(helper => {
+                // Filter by nationality
+                const matchesNationality = selectedNationality === '' || helper.nationality === selectedNationality;
+
+                // Filter by age range
+                let matchesAge = true;
+                if (selectedAgeRange !== '') {
+                    const [minAgeStr, maxAgeStr] = selectedAgeRange.split('-');
+                    const minAge = parseInt(minAgeStr);
+                    const maxAge = maxAgeStr === '+' ? Infinity : parseInt(maxAgeStr);
+                    matchesAge = helper.age >= minAge && helper.age <= maxAge;
+                }
+
+                // Filter by skills
+                const matchesSkill = selectedSkill === '' || helper.skills.some(s => s.toLowerCase().includes(selectedSkill.toLowerCase()));
+
+                // Filter by search term (name)
+                const matchesSearch = searchTerm === '' || helper.name.toLowerCase().includes(searchTerm);
+
+                return matchesNationality && matchesAge && matchesSkill && matchesSearch;
+            });
+
+            renderHelpers(filtered);
+        }
+
+        // Initial render of all helpers when the page loads
+        window.onload = function() {
+            renderHelpers(domesticHelpers);
+        };
+    </script>
+</body>
+</html>
